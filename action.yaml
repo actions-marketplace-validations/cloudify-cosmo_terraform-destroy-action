@@ -1,0 +1,57 @@
+name: Execute Terraform Environment Destory
+description: Execute a terraform destroy on already created environment.
+branding:
+  icon: cloud
+  color: white
+inputs:
+  environment-name:
+    description: Name of Cloudify environment to handle terraform destroy
+    required: true
+  environment-id:
+    description: Id of Cloudify environment to handle terraform destroy
+    default: "-"
+    required: false
+  labels:
+    description: |
+      A labels list of the form <key>:<value>,<key>:<value>.
+      Any comma and colon in <value> must be escaped with \.
+      The labels’ keys are saved in lowercase.
+    required: false
+    default: "-"
+runs:
+  using: "composite"
+  steps:
+    - name: Check if Environment exists
+      if: ${{ inputs.environment-id == '-' }}
+      id: check_environment
+      uses: cloudify-cosmo/environment-data-using-labels-action@v1.2
+      with:
+          environment-name: ${{ inputs.environment-name }}
+          labels: ${{ inputs.labels }}
+    - name: Set Deployment exists
+      id: check_if_deployment_exists
+      shell: python
+      run: |
+        import json
+
+        deployment_id = "${{ inputs.environment-id }}"
+        if deployment_id != '-':
+          print ('::set-output name=exists::{0}'.format('true'))
+          print ('::set-output name=deployment_id::{0}'.format(deployment_id))
+        else:
+          environments = json.loads(r"""${{steps.check_environment.outputs.environment-data}}""")
+          if len(environments)==0:
+            print ('::set-output name=exists::{0}'.format('false'))
+          elif len(environments)==1:
+            print ('::set-output name=exists::{0}'.format('true'))
+            print ('::set-output name=deployment_id::{0}'.format(environments[0].get('deployment_id')))
+          else:
+            dep_ids = [dep.get('deployment_id') for dep in environments]
+            raise Exception("Your name/labels may refer to these deployments {0} , please specify which one using environment-id input".format(dep_ids))
+
+    - name: Execute terraform destroy
+      id: terraform_destroy
+      if: ${{ steps.check_if_deployment_exists.outputs.exists == 'true' }}
+      uses: cloudify-cosmo/delete-environment-action@v1.2
+      with:
+       environment-name: ${{ steps.check_if_deployment_exists.outputs.deployment_id }}
