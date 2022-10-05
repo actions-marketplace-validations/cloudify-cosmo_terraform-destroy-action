@@ -21,7 +21,7 @@ jobs:
   test_job:
     steps:
       - name: Delete terraform environment
-        uses: cloudify-cosmo/terraform-destroy-action@v1.2
+        uses: cloudify-cosmo/terraform-destroy-action@v1.3
         with:
           environment-name: "test-$GITHUB_RUN_ID"
           labels: some_label:label_value,yet_another_label:some_value

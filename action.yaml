@@ -24,7 +24,7 @@ runs:
     - name: Check if Environment exists
       if: ${{ inputs.environment-id == '-' }}
       id: check_environment
-      uses: cloudify-cosmo/environment-data-using-labels-action@v1.2
+      uses: cloudify-cosmo/environment-data-using-labels-action@v1.3
       with:
           environment-name: ${{ inputs.environment-name }}
           labels: ${{ inputs.labels }}
@@ -52,6 +52,6 @@ runs:
     - name: Execute terraform destroy
       id: terraform_destroy
       if: ${{ steps.check_if_deployment_exists.outputs.exists == 'true' }}
-      uses: cloudify-cosmo/delete-environment-action@v1.2
+      uses: cloudify-cosmo/delete-environment-action@v1.3
       with:
        environment-name: ${{ steps.check_if_deployment_exists.outputs.deployment_id }}
